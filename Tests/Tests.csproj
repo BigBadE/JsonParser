@@ -44,6 +44,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Integration\IntegrationTester.cs" />
         <Compile Include="Util\AccessorTests.cs" />
     </ItemGroup>
     <ItemGroup>

@@ -1,11 +1,16 @@
-﻿namespace JsonParser.Reader
+﻿namespace Parser.Reader
 {
     public enum ReaderState
     {
-        StartObject,
-        StartMember,
-        MemberValue,
-        StartArray,
+        Start,
+        Object,
+        Array,
+        String,
+        StringUnescaped,
+        Number,
+        Value,
+        End,
+        Key,
         EndOfFile
     }
 }

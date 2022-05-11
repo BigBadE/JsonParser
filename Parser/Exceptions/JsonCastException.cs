@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace JsonParser.Exceptions
+namespace Parser.Exceptions
 {
     [Serializable]
     public class JsonCastException : Exception
