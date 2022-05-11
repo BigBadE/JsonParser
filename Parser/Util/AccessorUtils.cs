@@ -18,15 +18,17 @@ namespace Parser.Util
                 return (Action<object>) _generated[name];
             }
 
-            DynamicMethod dynamicMethod = new DynamicMethod(name, null, Type.EmptyTypes, true);
+            DynamicMethod dynamicMethod = new DynamicMethod(name, null, 
+                new [] { typeof(object), typeof(object) }, true);
             
             ILGenerator generator = dynamicMethod.GetILGenerator();
             
             generator.Emit(OpCodes.Ldarg_0);
+            generator.Emit(OpCodes.Ldarg_1);
             generator.Emit(OpCodes.Stfld, fieldInfo);
             generator.Emit(OpCodes.Ret);
             
-            return dynamicMethod.CreateDelegate(typeof(Action<int>));
+            return dynamicMethod.CreateDelegate(typeof(Action<object, object>));
         }
     }
 }
