@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using Parser.Reader;
 using Parser.Settings;
+using Parser.Structure;
 
 namespace Tests.Integration
 {
@@ -14,14 +15,15 @@ namespace Tests.Integration
             Test(
                 @"{
 ""key"": 12
-}");
+}
+");
         }
 
         private void Test(string line)
         {
             StringBuilder builder = new StringBuilder();
-            new Parser.JsonParser().Parse(new JsonTextReader(line))
-                .ToString(builder, new JsonParserSettings(), 0);
+            IJToken token = new Parser.JsonParser().Parse(new JsonTextReader(line));
+            token.ToString(builder, new JsonParserSettings(), 0);
             Assert.AreEqual(line, builder.ToString());
         }
     }

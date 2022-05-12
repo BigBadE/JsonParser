@@ -11,7 +11,7 @@ namespace Parser.Reader
         protected int Index;
         protected int LineIndex;
         protected int Line;
-        
+
         private ReaderState _state;
 
         private IJToken _token;
@@ -43,12 +43,23 @@ namespace Parser.Reader
                                 throw new InvalidCastException(
                                     "Illegal start character " + GetCharacter(Index - 1) + " at " + (Index - 1));
                         }
+                    case ReaderState.Next:
+                        if (NextNonWhitespace() == ',')
+                        {
+                            _state = ReaderState.Key;
+                        }
+                        else
+                        {
+                            _state = ReaderState.End;
+                            return;
+                        }
+                        break;
                     case ReaderState.Object:
                         _state = ReaderState.Key;
-                        break;
+                        return;
                     case ReaderState.Key:
                         ParseKey();
-                        break;
+                        return;
                     case ReaderState.Array:
                     case ReaderState.Value:
                         if (ParseValue())
@@ -60,13 +71,16 @@ namespace Parser.Reader
                     case ReaderState.Number:
                         Index--;
                         ParseNumber();
-                        break;
+                        _state = ReaderState.Next;
+                        return;
                     case ReaderState.String:
                         ParseString(true);
-                        break;
+                        _state = ReaderState.Next;
+                        return;
                     case ReaderState.StringUnescaped:
                         ParseString(false);
-                        break;
+                        _state = ReaderState.Next;
+                        return;
                     case ReaderState.EndOfFile:
                         return;
                 }
@@ -74,30 +88,29 @@ namespace Parser.Reader
         }
 
         protected abstract char GetCharacter(int index);
-        
+
         protected abstract char ReadNext();
 
         private void ParseKey()
         {
-            bool escaped = false;
-            if (ReadNext() == '"')
+            NextNonWhitespace();
+            ParseString(true);
+            if (NextNonWhitespace() != ':')
             {
-                escaped = true;
+                throw new InvalidJsonException("Invalid member seperator", Index, Index - LineIndex - 1);
             }
-            else
-            {
-                Index--;
-            }
-            ParseString(escaped);
+
+            _state = ReaderState.Value;
         }
-        
+
         private void ParseString(bool escapedString)
         {
             StringBuilder builder = new StringBuilder();
             char current = ReadNext();
             bool escaped = false;
-            while (escaped || (escapedString ? current != '"' : 
-                       CharUnicodeInfo.GetUnicodeCategory(current) == UnicodeCategory.SpaceSeparator))
+            while (escaped || (escapedString
+                ? current != '"'
+                : CharUnicodeInfo.GetUnicodeCategory(current) != UnicodeCategory.SpaceSeparator))
             {
                 if (escaped)
                 {
@@ -169,10 +182,14 @@ namespace Parser.Reader
         private void ParseNumber()
         {
             bool negative = NextNonWhitespace() == '-';
-            Index -= 1;
+            if (!negative)
+            {
+                Index -= 1;
+            }
+
             float value = 0;
             int decimalPart = -1;
-            int exponent = -1;
+            int exponent = 0;
             bool onExponent = false;
             while (true)
             {
@@ -181,12 +198,12 @@ namespace Parser.Reader
                 {
                     case '"':
                     case '}':
-                        Index--;
                         if (negative)
                         {
                             value *= -1;
                         }
 
+                        Index--;
                         _token = new JNumber<float>(value * (float) Math.Pow(10, exponent));
                         return;
                     case '.':
@@ -201,7 +218,7 @@ namespace Parser.Reader
                             throw new InvalidJsonException(
                                 "Invalid number part: " + found, Line, Index - LineIndex - 1);
                         }
-                        
+
                         if (decimalPart > 0)
                         {
                             value += (found - '0') / (10f * decimalPart++);
@@ -260,20 +277,21 @@ namespace Parser.Reader
                     break;
                 case '{':
                     _state = ReaderState.Object;
-                    return false;
+                    return true;
                 case '[':
                     _state = ReaderState.Array;
                     break;
                 case '}':
                 case ']':
                     _state = ReaderState.End;
-                    return false;
+                    return true;
                 default:
                     char found = GetCharacter(Index - 1);
                     if ((found < '0' || found > '9'))
                     {
                         _state = ReaderState.Number;
-                    } else if (found != '.' && found != '-')
+                    }
+                    else if (found != '.' && found != '-')
                     {
                         found = ReadNext();
                         if (found < '0' || found > '9')
@@ -284,18 +302,20 @@ namespace Parser.Reader
                         {
                             _state = ReaderState.Number;
                         }
+
                         Index--;
                     }
                     else
                     {
                         _state = ReaderState.StringUnescaped;
                     }
+
                     Index--;
-                    return true;
+                    return false;
             }
 
             _state = NextNonWhitespace() == ',' ? ReaderState.Key : ReaderState.Start;
-            return false;
+            return true;
         }
 
         private char NextNonWhitespace()
@@ -311,6 +331,7 @@ namespace Parser.Reader
                         break;
                     case UnicodeCategory.SpaceSeparator:
                     case UnicodeCategory.ParagraphSeparator:
+                    case UnicodeCategory.Control:
                         break;
                     default:
                         return character;

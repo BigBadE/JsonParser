@@ -9,7 +9,7 @@ namespace Parser.Settings
 
         public readonly String Tab = "    ";
 
-        public readonly String Newline = "\n";
+        public readonly String Newline = "\r\n";
 
         public readonly String BetweenMembers = " ";
     }

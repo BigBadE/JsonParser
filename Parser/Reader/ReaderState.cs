@@ -11,6 +11,7 @@
         Value,
         End,
         Key,
+        Next,
         EndOfFile
     }
 }

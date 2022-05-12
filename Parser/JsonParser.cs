@@ -30,12 +30,13 @@ namespace Parser
             JObject jObject = new JObject();
 
             string key = null;
-            while (reader.State() != ReaderState.End)
+            while (true)
             {
                 reader.Read();
                 switch (reader.State())
                 {
                     case ReaderState.Key:
+                        reader.Read();
                         key = ((JString) reader.NextToken()).Convert();
                         break;
                     case ReaderState.Object:
@@ -46,14 +47,19 @@ namespace Parser
                         ReadArray(reader);
                         jObject.Add(key, reader.NextToken());
                         break;
+                    case ReaderState.Value:
+                    case ReaderState.String:
+                    case ReaderState.Number:
+                        reader.Read();
+                        jObject.Add(key, reader.NextToken());
+                        break;
+                    case ReaderState.End:
                     case ReaderState.EndOfFile:
                         return jObject;
                     default:
                         throw new ArgumentException("Reader stopped at invalid state " + reader.State());
                 }
             }
-
-            return jObject;
         }
 
         private JArray ReadArray(IFileReader reader)
@@ -78,6 +84,7 @@ namespace Parser
                     case ReaderState.Number:
                         array.Add(reader.NextToken());
                         break;
+                    case ReaderState.End:
                     case ReaderState.EndOfFile:
                         return new JArray(array.ToArray());
                     default:
