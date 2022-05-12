@@ -15,7 +15,6 @@ namespace Parser.Reader
 
         protected override char ReadNext()
         {
-            
             if (Index == _text.Length)
             {
                 throw new InvalidJsonException("Unexpected EOF", Line, LineIndex - Index);

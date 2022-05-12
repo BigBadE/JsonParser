@@ -40,30 +40,34 @@ namespace Parser.Reader
                                 _state = ReaderState.Array;
                                 return;
                             default:
-                                throw new InvalidCastException(
-                                    "Illegal start character " + GetCharacter(Index - 1) + " at " + (Index - 1));
+                                throw new InvalidJsonException(
+                                    "Illegal start character " + GetCharacter(Index-1), Line, Index-LineIndex-1);
                         }
                     case ReaderState.Next:
-                        if (NextNonWhitespace() == ',')
+                        switch (NextNonWhitespace())
                         {
-                            _state = ReaderState.Key;
-                        }
-                        else
-                        {
-                            _state = ReaderState.End;
-                            return;
+                            case ',':
+                                _state = ReaderState.Value;
+                                break;    
+                            case ':':
+                                _state = ReaderState.Seperator;
+                                break;
+                            default:
+                                _state = ReaderState.End;
+                                break;
                         }
                         break;
                     case ReaderState.Object:
-                        _state = ReaderState.Key;
+                        _state = ReaderState.Next;
                         return;
-                    case ReaderState.Key:
-                        ParseKey();
+                    case ReaderState.Seperator:
+                        _state = ReaderState.Next;
                         return;
                     case ReaderState.Array:
                     case ReaderState.Value:
                         if (ParseValue())
                         {
+                            _state = ReaderState.Next;
                             continue;
                         }
 
@@ -87,21 +91,14 @@ namespace Parser.Reader
             }
         }
 
+        public InvalidJsonException CreateException(string reason, int offset)
+        {
+            return new InvalidJsonException(reason, Line, Index - LineIndex - offset);
+        }
+
         protected abstract char GetCharacter(int index);
 
         protected abstract char ReadNext();
-
-        private void ParseKey()
-        {
-            NextNonWhitespace();
-            ParseString(true);
-            if (NextNonWhitespace() != ':')
-            {
-                throw new InvalidJsonException("Invalid member seperator", Index, Index - LineIndex - 1);
-            }
-
-            _state = ReaderState.Value;
-        }
 
         private void ParseString(bool escapedString)
         {
@@ -276,10 +273,8 @@ namespace Parser.Reader
                     _state = ReaderState.String;
                     break;
                 case '{':
-                    _state = ReaderState.Object;
-                    return true;
                 case '[':
-                    _state = ReaderState.Array;
+                    Index--;
                     return true;
                 case '}':
                 case ']':
@@ -313,8 +308,6 @@ namespace Parser.Reader
                     Index--;
                     return false;
             }
-
-            _state = NextNonWhitespace() == ',' ? ReaderState.Key : ReaderState.Start;
             return true;
         }
 
