@@ -10,7 +10,7 @@
         Number,
         Value,
         End,
-        Key,
+        Seperator,
         Next,
         EndOfFile
     }

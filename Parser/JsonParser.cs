@@ -35,23 +35,46 @@ namespace Parser
                 reader.Read();
                 switch (reader.State())
                 {
-                    case ReaderState.Key:
-                        reader.Read();
-                        key = ((JString) reader.NextToken()).Convert();
+                    case ReaderState.Seperator:
                         break;
                     case ReaderState.Object:
                         ReadObject(reader);
+                        if (key == null)
+                        {
+                            throw reader.CreateException("No key for object", 1);
+                        }
+
                         jObject.Add(key, reader.NextToken());
+                        key = null;
                         break;
                     case ReaderState.Array:
                         ReadArray(reader);
+                        if (key == null)
+                        {
+                            throw reader.CreateException("No key for object", 1);
+                        }
+
                         jObject.Add(key, reader.NextToken());
+                        key = null;
                         break;
-                    case ReaderState.Value:
-                    case ReaderState.String:
-                    case ReaderState.Number:
+                    case ReaderState.Next:
                         reader.Read();
-                        jObject.Add(key, reader.NextToken());
+                        if (key == null)
+                        {
+                            if (reader.NextToken() is JString jString)
+                            {
+                                key = jString.Convert();
+                            }
+                            else
+                            {
+                                throw reader.CreateException("No key for value", 1);
+                            }
+                        }
+                        else
+                        {
+                            jObject.Add(key, reader.NextToken());
+                            key = null;
+                        }
                         break;
                     case ReaderState.End:
                     case ReaderState.EndOfFile:

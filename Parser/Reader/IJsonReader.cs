@@ -1,4 +1,5 @@
 ﻿using JsonParser.Structure;
+using Parser.Exceptions;
 using Parser.Structure;
 
 namespace Parser.Reader
@@ -10,5 +11,7 @@ namespace Parser.Reader
         IJToken NextToken();
 
         void Read();
+
+        InvalidJsonException CreateException(string reason, int offset);
     }
 }
