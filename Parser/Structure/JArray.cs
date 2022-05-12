@@ -15,7 +15,7 @@ namespace Parser.Structure
         {
             _array = array;
         }
-        
+
         public void ToString(StringBuilder builder, JsonParserSettings settings, int depth)
         {
             builder.Append("[").Append(settings.Newline);

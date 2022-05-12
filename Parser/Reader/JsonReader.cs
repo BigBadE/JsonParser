@@ -280,7 +280,7 @@ namespace Parser.Reader
                     return true;
                 case '[':
                     _state = ReaderState.Array;
-                    break;
+                    return true;
                 case '}':
                 case ']':
                     _state = ReaderState.End;

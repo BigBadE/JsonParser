@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using Parser.Exceptions;
 using Parser.Settings;
@@ -19,6 +20,23 @@ namespace JsonParser.Structure
 
         public void Add(string key, IJToken value) => _children.Add(key, value);
 
+        public JObject() {}
+        
+        public JObject(JsonParserSettings settings, object serializing) {
+            foreach (MemberInfo member in serializing.GetType().GetMembers())
+            {
+                switch (member)
+                {
+                    case PropertyInfo property:
+                        _children.Add(property.Name, Parser.Util.Serializer.Serialize(property.GetValue(serializing), settings));
+                        break;
+                    case FieldInfo field:
+                        _children.Add(field.Name, Parser.Util.Serializer.Serialize(field.GetValue(serializing), settings));
+                        break;
+                }
+            }
+        }
+        
         public T Convert<T>(JsonParserSettings settings)
         {
             if (typeof(T).IsPrimitive)
